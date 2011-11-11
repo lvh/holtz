@@ -168,7 +168,6 @@ class ConditionParseTest(unittest.TestCase):
         condition = "a?b"
         trues = "aab", "abb"
         falses = "a", "ab"
-        import pdb; pdb.set_trace()
         self._testCondition(condition, trues, falses)
 
 
