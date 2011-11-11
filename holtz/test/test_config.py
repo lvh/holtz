@@ -243,7 +243,7 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(len(self.parser._breadcrumbs), 0)
         try:
             self.parser.root
-        except config.ParseError as e:
+        except config.ParseError as e: # pragma: no cover
             if isinstance(e, config.IndentationError):
                 raise
             self.fail("Incomplete tree")
