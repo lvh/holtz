@@ -337,4 +337,5 @@ class ParserTest(unittest.TestCase):
 
     def test_incomplete(self):
         self.parser.push("js/")
+        self.parser.push("    *.js: Minify()")
         self.assertRaises(config.ParseError, lambda: self.parser.root)
