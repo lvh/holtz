@@ -1,5 +1,12 @@
 from setuptools import setup
 
+extraDependencies = []
+
+try:
+    from collections import OrderedDict
+except ImportError:
+    extraDependencies.append("ordereddict")
+
 setup(name='txyoga',
       version='0',
       description='Static preprocessor for the web',
@@ -10,7 +17,7 @@ setup(name='txyoga',
 
       packages=['holtz'],
 
-      requires=['twisted'],
+      install_requires=['twisted'] + extraDependencies,
 
       license='ISC',
       classifiers=[
