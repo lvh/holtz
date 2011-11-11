@@ -131,7 +131,6 @@ def _readUntilToken(string, tokens, start=0):
                 it.next() # ignore the escaped character
             except StopIteration:
                 raise ParseError("Lone backslash at end", string)
-            continue
         elif x in tokens:
             break
     else:
