@@ -3,6 +3,7 @@ Configuration parsing tools.
 """
 import ast
 import itertools
+import re
 
 from holtz import structure
 
@@ -139,6 +140,18 @@ def _readUntilToken(string, tokens, start=0):
     return i, x
 
 
+def _unescape(string):
+    def unescaped():
+        it = iter(string)
+        for x in it:
+            if x == "\\":
+                yield it.next()
+            else:
+                yield x
+
+    return "".join(unescaped())
+
+
 def _splitEntryLine(line):
     """
     Splits an entry line into strings representing its condition and effect
@@ -159,13 +172,30 @@ def _splitEntryLine(line):
 
 
 def _parseCondition(string):
-    index = 0
+    index, parts = 0, []
     try:
-        index, token = _readUntilToken(string, "*{", index)
-        if token == "{":
-            _parseAlternation(string, i + 1)
+        while True:
+            oldIndex = index
+            index, token = _readUntilToken(string, "{*?", index)
+
+            parts.append(re.escape(string[oldIndex:index]))
+
+            if token == "{":
+                index, options = _parseAlternation(string, index + 1)
+                part = "({})".format("|".join(map(re.escape, options)))
+                parts.append(part)
+            if token == "*":
+                parts.append(".*")
+            if token == "?":
+                parts.append(".")
+            
+            index += 1
     except NoTokens:
-        return string.__eq__
+        if parts:
+            parts.append(string[index:])
+            return re.compile("".join(parts)).match
+        else:
+            return string.__eq__
 
 
 def _parseAlternation(string, start):
@@ -177,7 +207,7 @@ def _parseAlternation(string, start):
         options.append(string[oldIndex:newIndex])
         oldIndex = newIndex + 1
 
-    return options
+    return newIndex, map(_unescape, options)
 
 
 def _parseEffect(string):

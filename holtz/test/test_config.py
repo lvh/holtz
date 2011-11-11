@@ -135,25 +135,57 @@ class EntryLineSplitTest(unittest.TestCase):
 
 
 class ConditionParseTest(unittest.TestCase):
+    def _testCondition(self, condition, trues, falses):
+        condition = config._parseCondition(condition)
+        for t in trues:
+            self.assertTrue(condition(t))
+        for f in falses:
+            self.assertFalse(condition(f))
+
+
     def test_literal(self):
-        condition = config._parseCondition("abc")
-        self.assertTrue(condition("abc"))
-        self.assertFalse(condition("def"))
+        condition = "abc"
+        trues = "abc",
+        falses = "def",
+        self._testCondition(condition, trues, falses)
+    
+
+    def test_withAlternation(self):
+        condition = "a{x,y,z}b"
+        trues = "axb", "ayb", "azb"
+        falses = "axyb", "ax"
+        self._testCondition(condition, trues, falses)
+
+    
+    def test_wildcard(self):
+        condition = "a*b"
+        trues = "ab", "aab", "aaaaaaaab"
+        falses = "a", "aa", "aaaaaaaa"
+        self._testCondition(condition, trues, falses)
+
+
+    def test_singleCharacterWildcard(self):
+        condition = "a?b"
+        trues = "aab", "abb"
+        falses = "a", "ab"
+        import pdb; pdb.set_trace()
+        self._testCondition(condition, trues, falses)
 
 
 
 class AlternationParseTest(unittest.TestCase):
-    def _testAlternationParse(self, string, expected):
-        alternation = config._parseAlternation(string, 1)
-        self.assertEqual(alternation, expected)
+    def _testAlternationParse(self, string, expectedIndex, expectedOptions):
+        index, options = config._parseAlternation(string, 1)
+        self.assertEqual(index, expectedIndex)
+        self.assertEqual(options, expectedOptions)
     
 
     def test_single(self):
-        self._testAlternationParse("{a}", ["a"])
+        self._testAlternationParse("{a}", 2, ["a"])
 
 
     def test_multiple(self):
-        self._testAlternationParse("{a,b,c}", ["a", "b", "c"])
+        self._testAlternationParse("{a,b,c}", 6, ["a", "b", "c"])
 
 
 
