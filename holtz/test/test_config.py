@@ -70,6 +70,18 @@ class TabIndentLevelTest(IndentLevelTest):
 
 
 
+class UnescapeTest(unittest.TestCase):
+    def test_plain(self):
+        unescaped = config._unescape("abc")
+        self.assertEqual(unescaped, "abc")
+    
+
+    def test_escaped(self):
+        unescaped = config._unescape("a\:c")
+        self.assertEqual(unescaped, "a:c")
+
+
+
 class ReadUntilTokenTest(unittest.TestCase):
     def _test(self, string, tokens, expectedIndex, expectedToken, start=0):
         index, token = config._readUntilToken(string, tokens, start)
@@ -249,7 +261,7 @@ class ParserTest(unittest.TestCase):
             self.fail("Incomplete tree")
 
 
-    def test_simple(self):
+    def test_basicConfig(self):
         def push():
             self.parser.push(basicFile.readline())
         
@@ -287,7 +299,7 @@ class ParserTest(unittest.TestCase):
         basicFile.seek(0, 0)
 
 
-    def test_nested(self):
+    def test_nestedConfig(self):
         def push():
             self.parser.push(nestedFile.readline())
         
@@ -320,6 +332,10 @@ class ParserTest(unittest.TestCase):
 
 
     def test_multipleIndents(self):
+        """
+        Tests that the parser does not allow you to jump multiple indentation
+        levels at once.
+        """
         self.parser.push("js/")
 
         def push():
