@@ -126,9 +126,9 @@ def _indentLevel(line, indent=FOUR_SPACES):
 def _readUntilToken(string, tokens, start=0):
     it = itertools.islice(enumerate(string), start, None)
     for i, x in it:
-        if x == "\\": # escape
+        if x == "\\":
             try:
-                it.next() # ignore the escaped character
+                it.next()
             except StopIteration:
                 raise ParseError("Lone backslash at end", string)
         elif x in tokens:
