@@ -5,6 +5,8 @@ import ast
 import itertools
 import re
 
+from twisted.protocols import basic
+
 from holtz import structure
 
 
@@ -124,6 +126,9 @@ def _indentLevel(line, indent=FOUR_SPACES):
 
 
 def _readUntilToken(string, tokens, start=0):
+    """
+    Reads the string until one of the given tokens is found.
+    """
     it = itertools.islice(enumerate(string), start, None)
     for i, x in it:
         if x == "\\":
@@ -210,7 +215,35 @@ def _parseAlternation(string, start):
 
 
 def _parseEffect(string):
-    return None
+    expr = ast.parse(string, mode="eval").body
+    
+    if isinstance(expr, ast.Name) and expr.id == "None":
+        expr = None
+    elif not isinstance(expr, ast.Call):
+        exprType = expr.__class__
+        message = "Effect expr must be a call or None, was {}".format(exprType)
+        raise ParseError(message)
+    elif not isinstance(expr.func, ast.Name):
+        callee = expr.func.__class__
+        message = "Effect must call names, was {}".format(callee)
+        raise ParseError(message)
+    
+    # expr is None or a valid call expr
+    
+    def effect(filePath, request, registry, resolver):
+        if expr is not None:
+            processorClass = registry[expr.func.id]
+            contentType = processorClass.producer.contentType
+            expression = ast.Expression(expr)
+        else:
+            contentType = resolver(filePath)
+
+        request.setHeader("Content-Type", contentType)
+
+        producer = basic.FileSender()        
+        producer.beginFileTransfer(filePath.open(), request)
+    
+    return effect
 
 
 

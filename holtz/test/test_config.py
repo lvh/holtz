@@ -1,3 +1,5 @@
+import mock
+
 from twisted.trial import unittest
 
 from holtz import compat, config
@@ -197,6 +199,74 @@ class AlternationParseTest(unittest.TestCase):
 
     def test_multiple(self):
         self._testAlternationParse("{a,b,c}", 6, ["a", "b", "c"])
+
+
+
+class EffectParseTest(unittest.TestCase):
+    def setUp(self):
+        self.filePath = mock.Mock()
+        self.file = compat.StringIO()
+        self.filePath.open.return_value = self.file
+
+        self.producer = mock.Mock()
+
+        self.processor = mock.Mock()
+        self.processor.producer.contentType = "holtz/fromProducer"
+        self.registry = {"A": self.processor}
+        
+        self.resolver = lambda fp: "holtz/fromResolver"
+
+        self.request = mock.Mock()
+
+
+    def assertContentTypeEquals(self, expected):
+        self.assertEquals(self.request.setHeader.call_count, 1)
+        header, value = self.request.setHeader.call_args[0]
+        self.assertEquals(header, "Content-Type")
+        self.assertEquals(value, expected)
+    
+
+    def assertRegisteredProducer(self):
+        registerProducer = self.request.registerProducer
+        self.assertEquals(registerProducer.call_count, 1)
+        producer, streaming = registerProducer.call_args[0]
+        self.assertIdentical(producer.file, self.file)
+        self.assertFalse(streaming)
+
+
+    def _testEffect(self, effectString):
+        effect = config._parseEffect(effectString)
+        effect(self.filePath, self.request, self.registry, self.resolver)
+
+
+    def test_simple(self):
+        self._testEffect("A()")
+        self.assertContentTypeEquals("holtz/fromProducer")
+        self.assertRegisteredProducer()
+
+
+    def test_none(self):
+        self._testEffect("None")
+        self.assertContentTypeEquals("holtz/fromResolver")
+        self.assertRegisteredProducer()
+
+
+
+class EffectParseFailureTest(unittest.TestCase):
+    def _testRaises(self, string, exceptionClass=config.ParseError):
+        self.assertRaises(exceptionClass, config._parseEffect, string)
+
+
+    def test_callLambda(self):
+        self._testRaises("(lambda: None)(a=1)")
+
+
+    def test_multipleExpressions(self):
+        self._testRaises("1; 2; 3", SyntaxError)
+    
+
+    def test_noCall(self):
+        self._testRaises("a.b")
 
 
 
