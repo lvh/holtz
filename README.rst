@@ -5,5 +5,5 @@ holtz
 
 .. _`holtz`: https://github.com/lvh/holtz
 
-.. image:: http://dl.dropbox.com/u/38476311/holtz.jpg
+.. image:: http://project-logos.lvh.cc/holtz.jpg
     :align: center
